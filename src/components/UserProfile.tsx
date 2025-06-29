@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Mail, MapPin, Star, Edit, Camera, Save, X, Shield, Award, DollarSign, Clock, Package, CheckSquare, Loader, History, Briefcase } from 'lucide-react';
+import { User, Mail, MapPin, Star, Edit, Camera, Save, X, Shield, Award, DollarSign, Clock, Package, CheckSquare, Loader, History, Briefcase, Zap } from 'lucide-react';
 import { auth, db, storage } from '../lib/firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import toast from 'react-hot-toast';
 import TaskHistory from './TaskHistory';
 import { StarBorder } from './ui/star-border';
+import { useRevenueCat } from './RevenueCatProvider';
+import PremiumSubscriptionModal from './PremiumSubscriptionModal';
+import TaskCreditsModal from './TaskCreditsModal';
+import SubscriptionButton from './SubscriptionButton';
 
 const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -19,10 +23,14 @@ const UserProfile: React.FC = () => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   
   // New state for hourly rate settings
   const [hourlyRate, setHourlyRate] = useState<string>('');
   const [editingRate, setEditingRate] = useState(false);
+  
+  const { isPremium, taskCredits } = useRevenueCat();
 
   useEffect(() => {
     loadUserData();
@@ -300,6 +308,18 @@ const UserProfile: React.FC = () => {
                   <span className="text-sm">Verified Student</span>
                 </div>
               )}
+              
+              {/* Subscription Status */}
+              <div className="flex justify-center mt-3 space-x-2">
+                <SubscriptionButton 
+                  type="premium" 
+                  onClick={() => setShowPremiumModal(true)} 
+                />
+                <SubscriptionButton 
+                  type="credits" 
+                  onClick={() => setShowCreditsModal(true)} 
+                />
+              </div>
             </div>
             
             {/* Navigation */}
@@ -368,6 +388,7 @@ const UserProfile: React.FC = () => {
             >
               Profile
             </button>
+            
             <button
               onClick={() => setActiveTab('tasks')}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
@@ -376,6 +397,7 @@ const UserProfile: React.FC = () => {
             >
               Tasks
             </button>
+            
             <button
               onClick={() => setActiveTab('history')}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
@@ -384,6 +406,7 @@ const UserProfile: React.FC = () => {
             >
               History
             </button>
+            
             <button
               onClick={() => setActiveTab('stats')}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
@@ -524,6 +547,48 @@ const UserProfile: React.FC = () => {
                             Unverified
                           </span>
                         )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Subscription Status */}
+                  <div className="flex items-start">
+                    <Star className="w-5 h-5 text-gray-400 mt-1 mr-3" />
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Subscription Status</h3>
+                      <div className="mt-1 flex items-center">
+                        {isPremium ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <Star className="w-3 h-3 mr-1" />
+                            Premium Member
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setShowPremiumModal(true)}
+                            className="text-sm text-[#0038FF] hover:text-[#0021A5] flex items-center"
+                          >
+                            <Star className="w-3 h-3 mr-1" />
+                            Upgrade to Premium
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Task Credits */}
+                  <div className="flex items-start">
+                    <Zap className="w-5 h-5 text-gray-400 mt-1 mr-3" />
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Task Credits</h3>
+                      <div className="mt-1 flex items-center">
+                        <span className="font-medium">{taskCredits}</span>
+                        <button
+                          onClick={() => setShowCreditsModal(true)}
+                          className="ml-3 text-sm text-[#0038FF] hover:text-[#0021A5] flex items-center"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Buy More
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -814,11 +879,46 @@ const UserProfile: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Premium Achievement */}
+                <div className={`p-4 rounded-lg border ${
+                  isPremium
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                      isPremium
+                        ? 'bg-green-100'
+                        : 'bg-gray-100'
+                    }`}>
+                      <Star className={`w-6 h-6 ${
+                        isPremium
+                          ? 'text-green-600'
+                          : 'text-gray-400'
+                      }`} />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Premium Member</h4>
+                      <p className="text-sm text-gray-500">Subscribe to Hustl Premium</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
+      
+      {/* Premium Subscription Modal */}
+      {showPremiumModal && (
+        <PremiumSubscriptionModal onClose={() => setShowPremiumModal(false)} />
+      )}
+      
+      {/* Task Credits Modal */}
+      {showCreditsModal && (
+        <TaskCreditsModal onClose={() => setShowCreditsModal(false)} />
+      )}
     </div>
   );
 };

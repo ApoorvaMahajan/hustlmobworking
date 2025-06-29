@@ -6,6 +6,7 @@ import StripeProvider from './components/StripeProvider.tsx';
 import { TranslationProvider } from './components/TranslationProvider.tsx';
 import { LingoProviderWrapper, loadDictionary } from "lingo.dev/react/client";
 import * as Sentry from "@sentry/react";
+import { RevenueCatProvider } from './components/RevenueCatProvider.tsx';
 
 // Initialize Sentry
 Sentry.init({
@@ -55,7 +56,9 @@ createRoot(document.getElementById('root')!).render(
       <LingoProviderWrapper loadDictionary={(locale) => loadDictionary(locale)}>
         <TranslationProvider>
           <StripeProvider>
-            <App />
+            <RevenueCatProvider>
+              <App />
+            </RevenueCatProvider>
           </StripeProvider>
         </TranslationProvider>
       </LingoProviderWrapper>
